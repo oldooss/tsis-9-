@@ -1,135 +1,140 @@
-import pygame, sys
-from pygame.locals import *
-import random, time
+import pygame
+import time
+import random
 
 pygame.init()
 
-FPS = 60
-FramePerSec = pygame.time.Clock()
+white = (255, 255, 255)
+black = (0, 0, 0)
+red = (255, 0, 0)
 
-BLUE = (0, 0, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
+width = 800
+height = 600
+screen = pygame.display.set_mode((width, height))
+name_of_game = pygame.display.set_caption("Snake")
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("Verdana", 25)
 
-SCREEN_WIDTH = 400
-SCREEN_HEIGHT = 600
-SPEED = 5
-SCORE = 0
+snake_size = 20
 
-font = pygame.font.SysFont("Verdana", 60)
-font_small = pygame.font.SysFont("Verdana", 20)
-game_over = font.render("Game Over", True, BLACK)
-
-background = pygame.image.load("C:/Users/Admin/pyimages/road.jpg")
-
-DISPLAYSURF = pygame.display.set_mode((400, 600))
-DISPLAYSURF.fill(WHITE)
-pygame.display.set_caption("Game")
+def current_level(level):
+    level_str = font.render("Level:" + str(level), True, white)
+    screen.blit(level_str, (700, 10))
 
 
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.image.load("C:/Users/Admin/pyimages/enemy.jpg")
-        self.rect = self.image.get_rect()
-        self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
-
-    def move(self):
-        self.rect.move_ip(0, SPEED)
-        if (self.rect.top > 600):
-            self.rect.top = 0
-            self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
+def current_point(point):
+    point_str = font.render("Points:" + str(point), True, white)
+    screen.blit(point_str, (10, 10))
 
 
-class Coin(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.image.load("C:/Users/Admin/pyimages/coin.jpg")
-        self.rect = self.image.get_rect()
-        self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
-
-    def move(self):
-        global SCORE
-        self.rect.move_ip(0, SPEED)
-        if (self.rect.top > 600):
-            self.rect.top = 0
-            self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
+def Main_snake(snake_block, snake_list):
+    for x in snake_list:
+        pygame.draw.rect(screen, white, [x[0], x[1], snake_block, snake_block])
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.image.load("C:/Users/Admin/pyimages/player.jpg")
-        self.rect = self.image.get_rect()
-        self.rect.center = (160, 520)
-
-    def move(self):
-        pressed_keys = pygame.key.get_pressed()
-
-        if self.rect.left > 0:
-            if pressed_keys[K_LEFT]:
-                self.rect.move_ip(-5, 0)
-        if self.rect.right < SCREEN_WIDTH:
-            if pressed_keys[K_RIGHT]:
-                self.rect.move_ip(5, 0)
+INC_SPEED1 = pygame.USEREVENT
+pygame.time.set_timer(INC_SPEED1, 1000)
 
 
-P1 = Player()
-E1 = Enemy()
-C1 = Coin()
+def GameStart():
 
-enemies = pygame.sprite.Group()
-enemies.add(E1)
-coins = pygame.sprite.Group()
-coins.add(C1)
-all_sprites = pygame.sprite.Group()
-all_sprites.add(P1)
-all_sprites.add(E1)
-all_sprites.add(C1)
+    x1 = width / 2
+    y1 = height / 2
+    x1_change = 0
+    y1_change = 0
+    snake_List = []
+    Length_of_snake = 1
+    snake_speed = 15
 
-INC_SPEED = pygame.USEREVENT + 1
-SPAWN_COIN = pygame.USEREVENT + 2
-pygame.time.set_timer(INC_SPEED, 1000)
-pygame.time.set_timer(SPAWN_COIN, 3000)
+    level = 0
+    point = 0
+    dissearing_food = False
+    game_over = False
 
-while True:
-    for event in pygame.event.get():
-        if event.type == INC_SPEED:
-            SPEED += 0.2
-        if event.type == SPAWN_COIN:
-            coins.add(C1)
-            all_sprites.add(C1)
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
 
-    DISPLAYSURF.blit(background, (0, 0))
-    scores = font_small.render("Coins: " + str(SCORE), True, BLACK)
-    DISPLAYSURF.blit(scores, (300, 10))
+    x_corr_food = round(random.randrange(0, width - snake_size) / 20.0) * 20.0
+    y_corr_food = round(random.randrange(0, height - snake_size) / 20.0) * 20.0
 
-    for entity in all_sprites:
-        DISPLAYSURF.blit(entity.image, entity.rect)
-        entity.move()
+    x_corr_for_diss_food = round(random.randrange(0, width - snake_size) / 20.0) * 20.0
+    y_corr_for_diss_food = round(random.randrange(0, height - snake_size) / 20.0) * 20.0
 
-    if pygame.sprite.spritecollideany(P1, coins):
-        entity.kill()
-        SCORE += 1
+    while not game_over:
+        for event in pygame.event.get():
+            if event.type == INC_SPEED1:
+                if dissearing_food == False:
+                    dissearing_food = True
+                    pygame.time.set_timer(INC_SPEED1, 5000)
+                elif dissearing_food == True:
+                    dissearing_food = False
+                    pygame.time.set_timer(INC_SPEED1, 10000)
+            if event.type == pygame.QUIT:
+                game_over = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    x1_change = -snake_size
+                    y1_change = 0
+                elif event.key == pygame.K_RIGHT:
+                    x1_change = snake_size
+                    y1_change = 0
+                elif event.key == pygame.K_UP:
+                    y1_change = -snake_size
+                    x1_change = 0
+                elif event.key == pygame.K_DOWN:
+                    y1_change = snake_size
+                    x1_change = 0
 
-    if pygame.sprite.spritecollideany(P1, enemies):
-        pygame.mixer.Sound('C:/Users/Admin/pyimages/crash.wav').play()
-        time.sleep(0.5)
+        if x1 >= width or x1 < 0 or y1 >= height or y1 < 0:
+            game_over = True
 
-        DISPLAYSURF.fill(RED)
-        DISPLAYSURF.blit(game_over, (30, 250))
+        screen.fill(black)
 
+        current_level(level)
+        current_point(point)
+
+        x1 += x1_change
+        y1 += y1_change
+
+        if dissearing_food == True:
+            pygame.draw.rect(screen, red, [x_corr_for_diss_food, y_corr_for_diss_food, snake_size, snake_size])
+
+        pygame.draw.rect(screen, white, [x_corr_food, y_corr_food, snake_size, snake_size])
+
+
+        snake_Head = []
+        snake_Head.append(x1)
+        snake_Head.append(y1)
+        snake_List.append(snake_Head)
+
+
+        if len(snake_List) > Length_of_snake:
+            del snake_List[0]
+        for x in snake_List[:-1]:
+            if x == snake_Head:
+                game_over = True
+        Main_snake(snake_size, snake_List)
         pygame.display.update()
-        for entity in all_sprites:
-            entity.kill()
-        time.sleep(2)
-        pygame.quit()
-        sys.exit()
 
-    pygame.display.update()
-    FramePerSec.tick(FPS)
+        if x1 == x_corr_food and y1 == y_corr_food:
+            x_corr_food = round(random.randrange(0, width - snake_size) / 20.0) * 20.0
+            y_corr_food = round(random.randrange(0, height - snake_size) / 20.0) * 20.0
+            Length_of_snake += 1
+            point += 1
+            if point % 5 == 0:
+                level += 1
+                snake_speed += 5
+
+        if x1 == x_corr_for_diss_food and y1 == y_corr_for_diss_food:
+            x_corr_for_diss_food = round(random.randrange(0, width - snake_size) / 20.0) * 20.0
+            y_corr_for_diss_food = round(random.randrange(0, height - snake_size) / 20.0) * 20.0
+            Length_of_snake += 5
+            dissearing_food = False
+            pygame.time.set_timer(INC_SPEED1, 10000)
+            point += 5
+            level += 1
+            snake_speed += 5
+
+        clock.tick(snake_speed)
+    pygame.quit()
+
+
+GameStart()
